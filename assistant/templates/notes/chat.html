@@ -1,0 +1,13 @@
+<h1>{{ session.title }}</h1>
+
+<div>
+    {% for msg in messages %}
+        <p><strong>{{ msg.role }}:</strong> {{ msg.content }}</p>
+    {% endfor %}
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="message" placeholder="Type a message...">
+    <button type="submit">Send</button>
+</form>
