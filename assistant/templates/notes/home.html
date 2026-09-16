@@ -1,0 +1,21 @@
+<h1>GeneNoteAI</h1>
+
+<h2>Your Notes</h2>
+<a href="{% url 'note_create' %}">+ New Note</a>
+<ul>
+    {% for note in notes %}
+        <li><a href="{% url 'note_detail' note.id %}">{{ note.title }}</a></li>
+    {% empty %}
+        <li>No notes yet.</li>
+    {% endfor %}
+</ul>
+
+<h2>Your Chats</h2>
+<a href="{% url 'chat_new' %}">+ New Chat</a>
+<ul>
+    {% for session in sessions %}
+        <li><a href="{% url 'chat_session' session.id %}">{{ session.title }}</a></li>
+    {% empty %}
+        <li>No chats yet.</li>
+    {% endfor %}
+</ul>

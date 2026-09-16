@@ -10,6 +10,11 @@ from .models import Note, Quiz, Question
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+def home_view(request):
+    notes = Note.objects.all().order_by('-created_at')
+    sessions = ChatSession.objects.all().order_by('-created_at')
+    return render(request, "notes/home.html", {"notes": notes, "sessions": sessions})
+
 def chat_view(request, session_id=None):
     if session_id:
         session = get_object_or_404(ChatSession, id=session_id)
