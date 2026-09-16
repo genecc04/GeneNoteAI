@@ -8,6 +8,10 @@
 <p>{{ note.content }}</p>
 
 <h3>Summary</h3>
-<p>{{ note.summary|default:"No summary yet." }}</p>
+{% if summary_html %}
+    {{ summary_html|safe }}
+{% else %}
+    <p>No summary yet.</p>
+{% endif %}
 
 <a href="{% url 'generate_quiz' note.id %}">Generate Quiz from this Note</a>

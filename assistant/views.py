@@ -1,5 +1,7 @@
 import os
+import time
 import json
+import markdown
 from django.shortcuts import render, get_object_or_404, redirect
 from dotenv import load_dotenv
 from google import genai
@@ -55,7 +57,21 @@ def note_create_view(request):
         if content:
             response = client.models.generate_content(
                 model="gemini-3.6-flash",
-                contents=f"Summarize the following study notes concisely:\n\n{content}"
+                contents=f"Summarize the following study notes concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.\n\n{content}"
+            )
+            note.summary = response.text
+            note.save()
+
+        elif note.file:
+            gemini_file = client.files.upload(file=note.file.path)
+
+            while gemini_file.state.name == "PROCESSING":
+                time.sleep(1)
+                gemini_file = client.files.get(name=gemini_file.name)
+
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=["Summarize the key points from this document concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.", gemini_file]
             )
             note.summary = response.text
             note.save()
@@ -66,7 +82,8 @@ def note_create_view(request):
 
 def note_detail_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
-    return render(request, "notes/note_detail.html", {"note": note})
+    summary_html = markdown.markdown(note.summary, extensions=['extra', 'nl2br']) if note.summary else ""
+    return render(request, "notes/note_detail.html", {"note": note, "summary_html": summary_html})
 
 def generate_quiz_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
