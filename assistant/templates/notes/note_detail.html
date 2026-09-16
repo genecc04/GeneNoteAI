@@ -9,3 +9,5 @@
 
 <h3>Summary</h3>
 <p>{{ note.summary|default:"No summary yet." }}</p>
+
+<a href="{% url 'generate_quiz' note.id %}">Generate Quiz from this Note</a>

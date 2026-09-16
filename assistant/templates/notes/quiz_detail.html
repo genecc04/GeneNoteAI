@@ -1,0 +1,13 @@
+<h1>{{ quiz.title }}</h1>
+
+{% for q in questions %}
+    <div>
+        <p><strong>{{ forloop.counter }}. {{ q.text }}</strong></p>
+        <p>a) {{ q.choice_a }}</p>
+        <p>b) {{ q.choice_b }}</p>
+        <p>c) {{ q.choice_c }}</p>
+        <p>d) {{ q.choice_d }}</p>
+        <p><em>Correct answer: {{ q.correct_choice }}</em></p>
+    </div>
+    <hr>
+{% endfor %}
