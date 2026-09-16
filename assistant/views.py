@@ -1,9 +1,9 @@
 import os
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from .models import ChatSession, ChatMessage
+from .models import ChatSession, ChatMessage, Note
 
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -32,3 +32,31 @@ def chat_view(request, session_id=None):
 
     messages = session.messages.order_by("created_at")
     return render(request, "notes/chat.html", {"session": session, "messages": messages})
+
+def note_create_view(request):
+    if request.method == "POST":
+        title = request.POST.get("title")
+        content = request.POST.get("content", "")
+        uploaded_file = request.FILES.get("file")
+
+        note = Note.objects.create(
+            title=title,
+            content=content,
+            file=uploaded_file
+        )
+
+        if content:
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=f"Summarize the following study notes concisely:\n\n{content}"
+            )
+            note.summary = response.text
+            note.save()
+
+        return redirect("note_detail", note_id=note.id)
+
+    return render(request, "notes/note_form.html")
+
+def note_detail_view(request, note_id):
+    note = get_object_or_404(Note, id=note_id)
+    return render(request, "notes/note_detail.html", {"note": note})
