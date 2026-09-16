@@ -6,8 +6,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from .models import ChatSession, ChatMessage, Note
-from .models import Note, Quiz, Question
+from .models import ChatSession, ChatMessage, Note, Quiz, Question, Flashcard
 
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -126,3 +125,39 @@ def quiz_detail_view(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
     questions = quiz.questions.all()
     return render(request, "notes/quiz_detail.html", {"quiz": quiz, "questions": questions})
+
+def generate_flashcards_view(request, note_id):
+    note = get_object_or_404(Note, id=note_id)
+
+    prompt = f"""
+Create 8 flashcards based on these notes.
+Respond ONLY with valid JSON, no other text, in this exact format:
+[
+  {{"front": "...", "back": "..."}}
+]
+
+Notes:
+{note.content}
+"""
+
+    response = client.models.generate_content(
+        model="gemini-3.6-flash",
+        contents=prompt
+    )
+
+    clean_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
+    cards_data = json.loads(clean_text)
+
+    for card in cards_data:
+        Flashcard.objects.create(
+            note=note,
+            front=card["front"],
+            back=card["back"]
+        )
+
+    return redirect("flashcards_detail", note_id=note.id)
+
+def flashcards_detail_view(request, note_id):
+    note = get_object_or_404(Note, id=note_id)
+    flashcards = note.flashcards.all()
+    return render(request, "notes/flashcards_detail.html", {"note": note, "flashcards": flashcards})
