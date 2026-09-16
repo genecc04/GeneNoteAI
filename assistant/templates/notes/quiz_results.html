@@ -1,0 +1,16 @@
+<h1>Results: {{ quiz.title }}</h1>
+<h2>Score: {{ score }} / {{ total }}</h2>
+
+{% for r in results %}
+    <div>
+        <p><strong>{{ r.question.text }}</strong></p>
+        <p>Your answer: {{ r.selected|default:"No answer" }}</p>
+        <p>Correct answer: {{ r.question.correct_choice }}</p>
+        {% if r.is_correct %}
+            <p style="color: green;">Correct!</p>
+        {% else %}
+            <p style="color: red;">Incorrect</p>
+        {% endif %}
+    </div>
+    <hr>
+{% endfor %}

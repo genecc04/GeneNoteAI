@@ -124,6 +124,29 @@ Notes:
 def quiz_detail_view(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
     questions = quiz.questions.all()
+
+    if request.method == "POST":
+        score = 0
+        results = []
+
+        for question in questions:
+            selected = request.POST.get(f"question_{question.id}")
+            is_correct = selected == question.correct_choice
+            if is_correct:
+                score += 1
+            results.append({
+                "question": question,
+                "selected": selected,
+                "is_correct": is_correct
+            })
+
+        return render(request, "notes/quiz_results.html", {
+            "quiz": quiz,
+            "results": results,
+            "score": score,
+            "total": len(questions)
+        })
+
     return render(request, "notes/quiz_detail.html", {"quiz": quiz, "questions": questions})
 
 def generate_flashcards_view(request, note_id):
