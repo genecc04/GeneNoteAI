@@ -97,6 +97,7 @@ def note_detail_view(request, note_id):
 
 def generate_quiz_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
+    source_text = note.content if note.content else note.summary
 
     prompt = f"""
     Create a 5-question multiple choice quiz based on these notes.
@@ -106,7 +107,7 @@ def generate_quiz_view(request, note_id):
     ]
 
     Notes:
-    {note.content}
+    {source_text}
     """
 
     response = client.models.generate_content(
@@ -166,6 +167,7 @@ def quiz_detail_view(request, quiz_id):
 
 def generate_flashcards_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
+    source_text = note.content if note.content else note.summary
 
     prompt = f"""
     Create 8 flashcards based on these notes.
@@ -175,7 +177,7 @@ def generate_flashcards_view(request, note_id):
     ]
 
     Notes:
-    {note.content}
+    {source_text}
     """
 
     response = client.models.generate_content(

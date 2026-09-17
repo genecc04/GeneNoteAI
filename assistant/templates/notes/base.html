@@ -30,6 +30,12 @@
         const modalBody = document.getElementById('note-modal-body');
         const modalClose = document.getElementById('note-modal-close');
 
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
         document.querySelector('.new-note-btn').addEventListener('click', function(e) {
             e.preventDefault();
             fetch(this.getAttribute('href'), {
@@ -51,6 +57,8 @@
             if (form.hasAttribute('data-quiz-form')) {
                 e.preventDefault();
 
+                document.getElementById('main-panel').innerHTML = '<p>Grading your quiz...</p>';
+
                 const formData = new FormData(form);
 
                 fetch(form.action, {
@@ -71,6 +79,10 @@
                 e.preventDefault();
                 const url = link.getAttribute('href');
 
+                if (link.hasAttribute('data-generating')) {
+                    document.getElementById('main-panel').innerHTML = '<p>Generating with Gemini, please wait...</p>';
+                }
+
                 fetch(url, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
@@ -78,17 +90,14 @@
                 .then(html => {
                     document.getElementById('main-panel').innerHTML = html;
 
+                    window.currentActiveNoteId = link.dataset.noteId;
+
                     document.querySelectorAll('.note-item').forEach(item => item.classList.remove('active'));
                     const sidebarItem = document.querySelector(`.note-item[data-note-id="${link.dataset.noteId}"]`);
                     if (sidebarItem) sidebarItem.classList.add('active');
                 });
             }
         });
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
 
         document.body.addEventListener('click', function(e) {
             const star = e.target.closest('[data-favorite-btn]');
@@ -109,28 +118,6 @@
 
                     const activeItem = document.querySelector(`.note-item[data-note-id="${window.currentActiveNoteId}"]`);
                     if (activeItem) activeItem.classList.add('active');
-                });
-            }
-        });
-
-        document.body.addEventListener('click', function(e) {
-            const link = e.target.closest('[data-note-link]');
-            if (link) {
-                e.preventDefault();
-                const url = link.getAttribute('href');
-
-                fetch(url, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('main-panel').innerHTML = html;
-
-                    window.currentActiveNoteId = link.dataset.noteId;
-
-                    document.querySelectorAll('.note-item').forEach(item => item.classList.remove('active'));
-                    const sidebarItem = document.querySelector(`.note-item[data-note-id="${link.dataset.noteId}"]`);
-                    if (sidebarItem) sidebarItem.classList.add('active');
                 });
             }
         });

@@ -1,6 +1,6 @@
 <h1>Add a Note</h1>
 
-<form method="post" enctype="multipart/form-data" action="{% url 'note_create' %}">
+<form method="post" enctype="multipart/form-data" action="{% url 'note_create' %}" onsubmit="this.querySelector('button').textContent='Saving & summarizing...'; this.querySelector('button').disabled=true;">
     {% csrf_token %}
     <input type="text" name="title" placeholder="Note title" required><br>
     <textarea name="content" placeholder="Paste your notes here..." rows="10" cols="50"></textarea><br>

@@ -14,5 +14,5 @@
     <p>No summary yet.</p>
 {% endif %}
 
-<a href="{% url 'generate_quiz' note.id %}" data-note-link>Generate Quiz from this Note</a>
-<a href="{% url 'generate_flashcards' note.id %}" data-note-link>Generate Flashcards from this Note</a>
+<a href="{% url 'generate_quiz' note.id %}" data-note-link data-generating>Generate Quiz from this Note</a><br><br>
+<a href="{% url 'generate_flashcards' note.id %}" data-note-link data-generating>Generate Flashcards from this Note</a>
