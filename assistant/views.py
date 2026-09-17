@@ -80,12 +80,20 @@ def note_create_view(request):
 
         return redirect("note_detail", note_id=note.id)
 
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, "notes/partials/note_form_content.html")
+
     return render(request, "notes/note_form.html")
 
 def note_detail_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
     summary_html = markdown.markdown(note.summary, extensions=['extra', 'nl2br']) if note.summary else ""
-    return render(request, "notes/note_detail.html", {"note": note, "summary_html": summary_html, "active_note_id": note.id})
+    context = {"note": note, "summary_html": summary_html, "active_note_id": note.id}
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, "notes/partials/note_detail_content.html", context)
+
+    return render(request, "notes/note_detail.html", context)
 
 def generate_quiz_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)

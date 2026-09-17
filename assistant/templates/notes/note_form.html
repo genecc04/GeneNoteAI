@@ -1,12 +1,4 @@
 {% extends "notes/base.html" %}
 {% block content %}
-<h1>Add a Note</h1>
-
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <input type="text" name="title" placeholder="Note title" required><br>
-    <textarea name="content" placeholder="Paste your notes here..." rows="10" cols="50"></textarea><br>
-    <input type="file" name="file"><br>
-    <button type="submit">Save Note</button>
-</form>
+{% include "notes/partials/note_form_content.html" %}
 {% endblock %}

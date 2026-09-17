@@ -1,21 +1,4 @@
 {% extends "notes/base.html" %}
 {% block content %}
-<h1>{{ note.title }}</h1>
-
-{% if note.file %}
-    <p>Attached file: <a href="{{ note.file.url }}">{{ note.file.name }}</a></p>
-{% endif %}
-
-<h3>Content</h3>
-<p>{{ note.content }}</p>
-
-<h3>Summary</h3>
-{% if summary_html %}
-    {{ summary_html|safe }}
-{% else %}
-    <p>No summary yet.</p>
-{% endif %}
-
-<a href="{% url 'generate_quiz' note.id %}">Generate Quiz from this Note</a><br><br>
-<a href="{% url 'generate_flashcards' note.id %}">Generate Flashcards from this Note</a>
+{% include "notes/partials/note_detail_content.html" %}
 {% endblock %}
