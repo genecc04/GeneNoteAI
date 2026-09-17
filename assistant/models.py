@@ -5,6 +5,7 @@ class Note(models.Model):
     content = models.TextField(blank=True)
     file = models.FileField(upload_to='notes/', blank=True, null=True)
     summary = models.TextField(blank=True)
+    is_favorite = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

@@ -8,12 +8,9 @@
 <body>
     <div class="sidebar">
         <a href="{% url 'note_create' %}" class="new-note-btn">+ New note</a>
-        {% for note in sidebar_notes %}
-            <a href="{% url 'note_detail' note.id %}" class="note-item {% if note.id == active_note_id %}active{% endif %}" data-note-link>
-                <span>{{ note.title }}</span>
-                <span class="note-icons">☆ ✕</span>
-            </a>
-        {% endfor %}
+        <div id="sidebar-list">
+            {% include "notes/partials/sidebar_notes.html" %}
+        </div>
     </div>
     <div class="main-panel" id="main-panel">
         {% block content %}{% endblock %}
@@ -28,6 +25,7 @@
     </div>
 
     <script>
+        window.currentActiveNoteId = "{{ active_note_id|default:'' }}";
         const modalOverlay = document.getElementById('note-modal-overlay');
         const modalBody = document.getElementById('note-modal-body');
         const modalClose = document.getElementById('note-modal-close');
@@ -67,10 +65,11 @@
             }
         });
 
-        document.querySelectorAll('[data-note-link]').forEach(link => {
-            link.addEventListener('click', function(e) {
+        document.body.addEventListener('click', function(e) {
+            const link = e.target.closest('[data-note-link]');
+            if (link) {
                 e.preventDefault();
-                const url = this.getAttribute('href');
+                const url = link.getAttribute('href');
 
                 fetch(url, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -80,9 +79,86 @@
                     document.getElementById('main-panel').innerHTML = html;
 
                     document.querySelectorAll('.note-item').forEach(item => item.classList.remove('active'));
-                    this.classList.add('active');
+                    const sidebarItem = document.querySelector(`.note-item[data-note-id="${link.dataset.noteId}"]`);
+                    if (sidebarItem) sidebarItem.classList.add('active');
                 });
-            });
+            }
+        });
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        document.body.addEventListener('click', function(e) {
+            const star = e.target.closest('[data-favorite-btn]');
+            if (star) {
+                e.preventDefault();
+                const noteId = star.dataset.noteId;
+
+                fetch(`/notes/${noteId}/toggle-favorite/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('sidebar-list').innerHTML = html;
+
+                    const activeItem = document.querySelector(`.note-item[data-note-id="${window.currentActiveNoteId}"]`);
+                    if (activeItem) activeItem.classList.add('active');
+                });
+            }
+        });
+
+        document.body.addEventListener('click', function(e) {
+            const link = e.target.closest('[data-note-link]');
+            if (link) {
+                e.preventDefault();
+                const url = link.getAttribute('href');
+
+                fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('main-panel').innerHTML = html;
+
+                    window.currentActiveNoteId = link.dataset.noteId;
+
+                    document.querySelectorAll('.note-item').forEach(item => item.classList.remove('active'));
+                    const sidebarItem = document.querySelector(`.note-item[data-note-id="${link.dataset.noteId}"]`);
+                    if (sidebarItem) sidebarItem.classList.add('active');
+                });
+            }
+        });
+
+        document.body.addEventListener('click', function(e) {
+            const deleteBtn = e.target.closest('[data-delete-btn]');
+            if (deleteBtn) {
+                e.preventDefault();
+                const noteId = deleteBtn.dataset.noteId;
+
+                if (!confirm('Delete this note? This cannot be undone.')) return;
+
+                fetch(`/notes/${noteId}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('sidebar-list').innerHTML = html;
+
+                    if (noteId === window.currentActiveNoteId) {
+                        window.location.href = "/";
+                    }
+                });
+            }
         });
     </script>
 </body>

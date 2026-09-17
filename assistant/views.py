@@ -99,15 +99,15 @@ def generate_quiz_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
 
     prompt = f"""
-Create a 5-question multiple choice quiz based on these notes.
-Respond ONLY with valid JSON, no other text, in this exact format:
-[
-  {{"question": "...", "choice_a": "...", "choice_b": "...", "choice_c": "...", "choice_d": "...", "correct_choice": "a"}}
-]
+    Create a 5-question multiple choice quiz based on these notes.
+    Respond ONLY with valid JSON, no other text, in this exact format:
+    [
+    {{"question": "...", "choice_a": "...", "choice_b": "...", "choice_c": "...", "choice_d": "...", "correct_choice": "a"}}
+    ]
 
-Notes:
-{note.content}
-"""
+    Notes:
+    {note.content}
+    """
 
     response = client.models.generate_content(
         model="gemini-3.6-flash",
@@ -168,15 +168,15 @@ def generate_flashcards_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
 
     prompt = f"""
-Create 8 flashcards based on these notes.
-Respond ONLY with valid JSON, no other text, in this exact format:
-[
-  {{"front": "...", "back": "..."}}
-]
+    Create 8 flashcards based on these notes.
+    Respond ONLY with valid JSON, no other text, in this exact format:
+    [
+    {{"front": "...", "back": "..."}}
+    ]
 
-Notes:
-{note.content}
-"""
+    Notes:
+    {note.content}
+    """
 
     response = client.models.generate_content(
         model="gemini-3.6-flash",
@@ -204,3 +204,18 @@ def flashcards_detail_view(request, note_id):
         return render(request, "notes/partials/flashcards_detail_content.html", context)
 
     return render(request, "notes/flashcards_detail.html", context)
+
+def toggle_favorite_view(request, note_id):
+    note = get_object_or_404(Note, id=note_id)
+    note.is_favorite = not note.is_favorite
+    note.save()
+
+    notes = Note.objects.all().order_by('-is_favorite', '-created_at')
+    return render(request, "notes/partials/sidebar_notes.html", {"sidebar_notes": notes})
+
+def delete_note_view(request, note_id):
+    note = get_object_or_404(Note, id=note_id)
+    note.delete()
+
+    notes = Note.objects.all().order_by('-is_favorite', '-created_at')
+    return render(request, "notes/partials/sidebar_notes.html", {"sidebar_notes": notes})

@@ -11,4 +11,6 @@ urlpatterns = [
     path('quiz/<int:quiz_id>/', views.quiz_detail_view, name='quiz_detail'),
     path('notes/<int:note_id>/generate-flashcards/', views.generate_flashcards_view, name='generate_flashcards'),
     path('notes/<int:note_id>/flashcards/', views.flashcards_detail_view, name='flashcards_detail'),
+    path('notes/<int:note_id>/toggle-favorite/', views.toggle_favorite_view, name='toggle_favorite'),
+    path('notes/<int:note_id>/delete/', views.delete_note_view, name='delete_note'),
 ]
