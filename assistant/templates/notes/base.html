@@ -48,6 +48,25 @@
             modalOverlay.classList.remove('open');
         });
 
+        document.getElementById('main-panel').addEventListener('submit', function(e) {
+            const form = e.target;
+            if (form.hasAttribute('data-quiz-form')) {
+                e.preventDefault();
+
+                const formData = new FormData(form);
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('main-panel').innerHTML = html;
+                });
+            }
+        });
+
         document.querySelectorAll('[data-note-link]').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();

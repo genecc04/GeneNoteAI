@@ -1,0 +1,18 @@
+<h1>{{ quiz.title }}</h1>
+
+<form method="post" action="{% url 'quiz_detail' quiz.id %}" data-quiz-form>
+    {% csrf_token %}
+    {% for q in questions %}
+        <div>
+            <p><strong>{{ forloop.counter }}. {{ q.text }}</strong></p>
+            <label><input type="radio" name="question_{{ q.id }}" value="a"> a) {{ q.choice_a }}</label><br>
+            <label><input type="radio" name="question_{{ q.id }}" value="b"> b) {{ q.choice_b }}</label><br>
+            <label><input type="radio" name="question_{{ q.id }}" value="c"> c) {{ q.choice_c }}</label><br>
+            <label><input type="radio" name="question_{{ q.id }}" value="d"> d) {{ q.choice_d }}</label><br>
+        </div>
+        <hr>
+    {% endfor %}
+    <button type="submit">Submit Quiz</button>
+</form>
+
+<a href="{% url 'note_detail' quiz.note.id %}" data-note-link>Return to Notes</a>

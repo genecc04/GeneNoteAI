@@ -1,0 +1,10 @@
+<h1>Flashcards: {{ note.title }}</h1>
+
+{% for card in flashcards %}
+    <div style="border: 1px solid black; padding: 10px; margin-bottom: 10px;">
+        <p><strong>Front:</strong> {{ card.front }}</p>
+        <p><strong>Back:</strong> {{ card.back }}</p>
+    </div>
+{% endfor %}
+
+<a href="{% url 'note_detail' note.id %}" data-note-link>Return to Notes</a>

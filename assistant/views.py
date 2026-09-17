@@ -135,6 +135,7 @@ Notes:
 def quiz_detail_view(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
     questions = quiz.questions.all()
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
     if request.method == "POST":
         score = 0
@@ -151,15 +152,17 @@ def quiz_detail_view(request, quiz_id):
                 "is_correct": is_correct
             })
 
-        return render(request, "notes/quiz_results.html", {
-            "quiz": quiz,
-            "results": results,
-            "score": score,
-            "total": len(questions),
-            "active_note_id": quiz.note.id
-        })
+        context = {"quiz": quiz, "results": results, "score": score, "total": len(questions), "active_note_id": quiz.note.id}
 
-    return render(request, "notes/quiz_detail.html", {"quiz": quiz, "questions": questions, "active_note_id": quiz.note.id})
+        if is_ajax:
+            return render(request, "notes/partials/quiz_results_content.html", context)
+        return render(request, "notes/quiz_results.html", context)
+
+    context = {"quiz": quiz, "questions": questions, "active_note_id": quiz.note.id}
+
+    if is_ajax:
+        return render(request, "notes/partials/quiz_detail_content.html", context)
+    return render(request, "notes/quiz_detail.html", context)
 
 def generate_flashcards_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
@@ -195,4 +198,9 @@ Notes:
 def flashcards_detail_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
     flashcards = note.flashcards.all()
-    return render(request, "notes/flashcards_detail.html", {"note": note, "flashcards": flashcards, "active_note_id": note.id})
+    context = {"note": note, "flashcards": flashcards, "active_note_id": note.id}
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, "notes/partials/flashcards_detail_content.html", context)
+
+    return render(request, "notes/flashcards_detail.html", context)
