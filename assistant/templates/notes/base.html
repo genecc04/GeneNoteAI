@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GeneNoteAI</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; margin: 0; display: flex; height: 100vh; }
+        .sidebar { width: 280px; border-right: 2px solid black; padding: 20px; overflow-y: auto; }
+        .new-note-btn { display: inline-block; border: 1px solid black; padding: 6px 12px; margin-bottom: 15px; text-decoration: none; color: black; border-radius: 4px; }
+        .note-item { border: 2px solid black; border-radius: 6px; padding: 12px 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: black; font-weight: bold; }
+        .note-item.active { background-color: #90EE90; }
+        .note-icons { font-size: 18px; }
+        .main-panel { flex: 1; padding: 30px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="{% url 'note_create' %}" class="new-note-btn">+ New note</a>
+        {% for note in sidebar_notes %}
+            <a href="{% url 'note_detail' note.id %}" class="note-item {% if note.id == active_note_id %}active{% endif %}">
+                <span>{{ note.title }}</span>
+                <span class="note-icons">☆ ✕</span>
+            </a>
+        {% endfor %}
+    </div>
+    <div class="main-panel">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

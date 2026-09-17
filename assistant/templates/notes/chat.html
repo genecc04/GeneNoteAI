@@ -1,3 +1,5 @@
+{% extends "notes/base.html" %}
+{% block content %}
 <h1>{{ session.title }}</h1>
 
 <div>
@@ -11,3 +13,4 @@
     <input type="text" name="message" placeholder="Type a message...">
     <button type="submit">Send</button>
 </form>
+{% endblock %}

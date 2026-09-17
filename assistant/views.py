@@ -12,9 +12,12 @@ load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def home_view(request):
-    notes = Note.objects.all().order_by('-created_at')
+    latest_note = Note.objects.order_by('-created_at').first()
+    if latest_note:
+        return redirect('note_detail', note_id=latest_note.id)
+
     sessions = ChatSession.objects.all().order_by('-created_at')
-    return render(request, "notes/home.html", {"notes": notes, "sessions": sessions})
+    return render(request, "notes/home.html", {"sessions": sessions})
 
 def chat_view(request, session_id=None):
     if session_id:
@@ -82,7 +85,7 @@ def note_create_view(request):
 def note_detail_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
     summary_html = markdown.markdown(note.summary, extensions=['extra', 'nl2br']) if note.summary else ""
-    return render(request, "notes/note_detail.html", {"note": note, "summary_html": summary_html})
+    return render(request, "notes/note_detail.html", {"note": note, "summary_html": summary_html, "active_note_id": note.id})
 
 def generate_quiz_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
@@ -144,10 +147,11 @@ def quiz_detail_view(request, quiz_id):
             "quiz": quiz,
             "results": results,
             "score": score,
-            "total": len(questions)
+            "total": len(questions),
+            "active_note_id": quiz.note.id
         })
 
-    return render(request, "notes/quiz_detail.html", {"quiz": quiz, "questions": questions})
+    return render(request, "notes/quiz_detail.html", {"quiz": quiz, "questions": questions, "active_note_id": quiz.note.id})
 
 def generate_flashcards_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
@@ -183,4 +187,4 @@ Notes:
 def flashcards_detail_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
     flashcards = note.flashcards.all()
-    return render(request, "notes/flashcards_detail.html", {"note": note, "flashcards": flashcards})
+    return render(request, "notes/flashcards_detail.html", {"note": note, "flashcards": flashcards, "active_note_id": note.id})

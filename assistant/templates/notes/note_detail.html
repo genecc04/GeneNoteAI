@@ -1,3 +1,5 @@
+{% extends "notes/base.html" %}
+{% block content %}
 <h1>{{ note.title }}</h1>
 
 {% if note.file %}
@@ -14,5 +16,6 @@
     <p>No summary yet.</p>
 {% endif %}
 
-<a href="{% url 'generate_quiz' note.id %}">Generate Quiz from this Note</a>
+<a href="{% url 'generate_quiz' note.id %}">Generate Quiz from this Note</a><br><br>
 <a href="{% url 'generate_flashcards' note.id %}">Generate Flashcards from this Note</a>
+{% endblock %}

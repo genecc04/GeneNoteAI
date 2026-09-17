@@ -1,3 +1,5 @@
+{% extends "notes/base.html" %}
+{% block content %}
 <h1>{{ quiz.title }}</h1>
 
 <form method="post">
@@ -14,3 +16,4 @@
     {% endfor %}
     <button type="submit">Submit Quiz</button>
 </form>
+{% endblock %}

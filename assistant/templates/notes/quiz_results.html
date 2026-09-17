@@ -1,3 +1,5 @@
+{% extends "notes/base.html" %}
+{% block content %}
 <h1>Results: {{ quiz.title }}</h1>
 <h2>Score: {{ score }} / {{ total }}</h2>
 
@@ -14,3 +16,4 @@
     </div>
     <hr>
 {% endfor %}
+{% endblock %}
