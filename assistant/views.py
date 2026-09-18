@@ -6,6 +6,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from google.genai import errors as genai_errors
 from .models import ChatSession, ChatMessage, Note, Quiz, Question, Flashcard
 
 load_dotenv()
@@ -18,6 +19,16 @@ def home_view(request):
 
     sessions = ChatSession.objects.all().order_by('-created_at')
     return render(request, "notes/home.html", {"sessions": sessions})
+
+def generate_with_retry(model, contents, max_retries=3, delay=2):
+    for attempt in range(max_retries):
+        try:
+            return client.models.generate_content(model=model, contents=contents)
+        except genai_errors.ServerError:
+            if attempt < max_retries - 1:
+                time.sleep(delay)
+            else:
+                raise
 
 def chat_view(request, session_id=None):
     if session_id:
@@ -36,7 +47,7 @@ def chat_view(request, session_id=None):
             for msg in past_messages
         ]
 
-        chat = client.chats.create(model="gemini-3.6-flash", history=history[:-1])
+        chat = client.chats.create(model="gemini-3.5-flash-lite", history=history[:-1])
         response = chat.send_message(user_text)
 
         ChatMessage.objects.create(session=session, role="model", content=response.text)
@@ -56,26 +67,30 @@ def note_create_view(request):
             file=uploaded_file
         )
 
-        if content:
-            response = client.models.generate_content(
-                model="gemini-3.6-flash",
-                contents=f"Summarize the following study notes concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.\n\n{content}"
-            )
-            note.summary = response.text
-            note.save()
+        try:
+            if content:
+                response = generate_with_retry(
+                    model="gemini-3.5-flash-lite",
+                    contents=f"Summarize the following study notes concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.\n\n{content}"
+                )
+                note.summary = response.text
+                note.save()
 
-        elif note.file:
-            gemini_file = client.files.upload(file=note.file.path)
+            elif note.file:
+                gemini_file = client.files.upload(file=note.file.path)
 
-            while gemini_file.state.name == "PROCESSING":
-                time.sleep(1)
-                gemini_file = client.files.get(name=gemini_file.name)
+                while gemini_file.state.name == "PROCESSING":
+                    time.sleep(1)
+                    gemini_file = client.files.get(name=gemini_file.name)
 
-            response = client.models.generate_content(
-                model="gemini-3.6-flash",
-                contents=["Summarize the key points from this document concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.", gemini_file]
-            )
-            note.summary = response.text
+                response = generate_with_retry(
+                    model="gemini-3.5-flash-lite",
+                    contents=["Summarize the key points from this document concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.", gemini_file]
+                )
+                note.summary = response.text
+                note.save()
+        except genai_errors.ServerError:
+            note.summary = "Summary generation failed — Gemini may be experiencing high demand. You can try regenerating it from the note page."
             note.save()
 
         return redirect("note_detail", note_id=note.id)
@@ -110,13 +125,12 @@ def generate_quiz_view(request, note_id):
     {source_text}
     """
 
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=prompt
-    )
-
-    clean_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
-    questions_data = json.loads(clean_text)
+    try:
+        response = generate_with_retry(model="gemini-3.5-flash-lite", contents=prompt)
+        clean_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
+        questions_data = json.loads(clean_text)
+    except (genai_errors.ServerError, json.JSONDecodeError):
+        return render(request, "notes/partials/error_content.html", {"note": note, "active_note_id": note.id})
 
     quiz = Quiz.objects.create(note=note, title=f"Quiz: {note.title}")
 
@@ -182,13 +196,12 @@ def generate_flashcards_view(request, note_id):
     {source_text}
     """
 
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=prompt
-    )
-
-    clean_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
-    cards_data = json.loads(clean_text)
+    try:
+        response = generate_with_retry(model="gemini-3.5-flash-lite", contents=prompt)
+        clean_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
+        cards_data = json.loads(clean_text)
+    except (genai_errors.ServerError, json.JSONDecodeError):
+        return render(request, "notes/partials/error_content.html", {"note": note, "active_note_id": note.id})
 
     for card in cards_data:
         Flashcard.objects.create(
@@ -247,27 +260,30 @@ def regenerate_summary_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
     source_text = note.content if note.content else note.summary
 
-    if note.content:
-        response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=f"Summarize the following study notes concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.\n\n{source_text}"
-        )
-        note.summary = response.text
-        note.save()
+    try:
+        if note.content:
+            response = generate_with_retry(
+                model="gemini-3.5-flash-lite",
+                contents=f"Summarize the following study notes concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.\n\n{source_text}"
+            )
+            note.summary = response.text
+            note.save()
 
-    elif note.file:
-        gemini_file = client.files.upload(file=note.file.path)
+        elif note.file:
+            gemini_file = client.files.upload(file=note.file.path)
 
-        while gemini_file.state.name == "PROCESSING":
-            time.sleep(1)
-            gemini_file = client.files.get(name=gemini_file.name)
+            while gemini_file.state.name == "PROCESSING":
+                time.sleep(1)
+                gemini_file = client.files.get(name=gemini_file.name)
 
-        response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=["Summarize the key points from this document concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.", gemini_file]
-        )
-        note.summary = response.text
-        note.save()
+            response = generate_with_retry(
+                model="gemini-3.5-flash-lite",
+                contents=["Summarize the key points from this document concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.", gemini_file]
+            )
+            note.summary = response.text
+            note.save()
+    except genai_errors.ServerError:
+        pass
 
     summary_html = markdown.markdown(note.summary, extensions=['extra', 'nl2br']) if note.summary else ""
     context = {"note": note, "summary_html": summary_html, "active_note_id": note.id}
