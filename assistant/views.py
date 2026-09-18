@@ -161,9 +161,15 @@ def quiz_detail_view(request, quiz_id):
             is_correct = selected == question.correct_choice
             if is_correct:
                 score += 1
+
+            selected_text = getattr(question, f"choice_{selected}", None) if selected else None
+            correct_text = getattr(question, f"choice_{question.correct_choice}")
+
             results.append({
                 "question": question,
                 "selected": selected,
+                "selected_text": selected_text,
+                "correct_text": correct_text,
                 "is_correct": is_correct
             })
 

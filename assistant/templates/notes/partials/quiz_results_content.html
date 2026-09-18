@@ -4,8 +4,8 @@
 {% for r in results %}
     <div>
         <p><strong>{{ r.question.text }}</strong></p>
-        <p>Your answer: {{ r.selected|default:"No answer" }}</p>
-        <p>Correct answer: {{ r.question.correct_choice }}</p>
+        <p>Your answer: {% if r.selected %}{{ r.selected }}. {{ r.selected_text }}{% else %}No answer{% endif %}</p>
+        <p>Correct answer: {{ r.question.correct_choice }}. {{ r.correct_text }}</p>
         {% if r.is_correct %}
             <p style="color: green;">Correct!</p>
         {% else %}
