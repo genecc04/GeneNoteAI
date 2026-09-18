@@ -6,5 +6,5 @@
     <textarea name="content" rows="10" cols="50">{{ note.content }}</textarea><br>
     <button type="submit">Save Changes</button>
 </form>
-
-<a href="{% url 'note_detail' note.id %}" data-note-link>Cancel</a>
+<br>
+<a href="{% url 'note_detail' note.id %}" data-note-link class="btn btn-secondary">Cancel</a>

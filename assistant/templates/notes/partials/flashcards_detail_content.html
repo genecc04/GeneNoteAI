@@ -19,4 +19,4 @@
 <button id="next-page" {% if pages|length <= 1 %}disabled{% endif %}>Next</button>
 <br><br>
 
-<a href="{% url 'note_detail' note.id %}" data-note-link>Return to Notes</a>
+<a href="{% url 'note_detail' quiz.note.id %}" data-note-link class="btn btn-secondary">Return to Notes</a>

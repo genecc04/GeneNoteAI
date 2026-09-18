@@ -1,6 +1,6 @@
 {% for note in sidebar_notes %}
     <a href="{% url 'note_detail' note.id %}" class="note-item {% if note.id == active_note_id %}active{% endif %}" data-note-link data-note-id="{{ note.id }}">
-        <span>{{ note.title }}</span>
+        <span class="note-title">{{ note.title }}</span>
         <span class="note-icons">
             <span data-favorite-btn data-note-id="{{ note.id }}">{% if note.is_favorite %}★{% else %}☆{% endif %}</span>
             <span data-delete-btn data-note-id="{{ note.id }}">✕</span>
