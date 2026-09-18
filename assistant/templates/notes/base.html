@@ -147,6 +147,27 @@
                 });
             }
         });
+
+        document.body.addEventListener('submit', function(e) {
+            const form = e.target;
+            if (form.hasAttribute('data-note-link-form')) {
+                e.preventDefault();
+
+                document.getElementById('main-panel').innerHTML = '<p>Saving...</p>';
+
+                const formData = new FormData(form);
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('main-panel').innerHTML = html;
+                });
+            }
+        });
     </script>
 </body>
 </html>

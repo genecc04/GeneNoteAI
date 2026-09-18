@@ -1,0 +1,10 @@
+<h1>Edit Note</h1>
+
+<form method="post" action="{% url 'note_edit' note.id %}" data-note-link-form>
+    {% csrf_token %}
+    <input type="text" name="title" value="{{ note.title }}" required><br>
+    <textarea name="content" rows="10" cols="50">{{ note.content }}</textarea><br>
+    <button type="submit">Save Changes</button>
+</form>
+
+<a href="{% url 'note_detail' note.id %}" data-note-link>Cancel</a>

@@ -13,4 +13,6 @@ urlpatterns = [
     path('notes/<int:note_id>/flashcards/', views.flashcards_detail_view, name='flashcards_detail'),
     path('notes/<int:note_id>/toggle-favorite/', views.toggle_favorite_view, name='toggle_favorite'),
     path('notes/<int:note_id>/delete/', views.delete_note_view, name='delete_note'),
+    path('notes/<int:note_id>/edit/', views.note_edit_view, name='note_edit'),
+    path('notes/<int:note_id>/regenerate-summary/', views.regenerate_summary_view, name='regenerate_summary'),
 ]

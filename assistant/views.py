@@ -221,3 +221,51 @@ def delete_note_view(request, note_id):
 
     notes = Note.objects.all().order_by('-is_favorite', '-created_at')
     return render(request, "notes/partials/sidebar_notes.html", {"sidebar_notes": notes})
+
+def note_edit_view(request, note_id):
+    note = get_object_or_404(Note, id=note_id)
+
+    if request.method == "POST":
+        note.title = request.POST.get("title")
+        note.content = request.POST.get("content", "")
+        note.save()
+
+        summary_html = markdown.markdown(note.summary, extensions=['extra', 'nl2br']) if note.summary else ""
+        context = {"note": note, "summary_html": summary_html, "active_note_id": note.id}
+        return render(request, "notes/partials/note_detail_content.html", context)
+
+    context = {"note": note, "active_note_id": note.id}
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, "notes/partials/note_edit_content.html", context)
+
+    return render(request, "notes/note_edit.html", context)
+
+def regenerate_summary_view(request, note_id):
+    note = get_object_or_404(Note, id=note_id)
+    source_text = note.content if note.content else note.summary
+
+    if note.content:
+        response = client.models.generate_content(
+            model="gemini-3.6-flash",
+            contents=f"Summarize the following study notes concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.\n\n{source_text}"
+        )
+        note.summary = response.text
+        note.save()
+
+    elif note.file:
+        gemini_file = client.files.upload(file=note.file.path)
+
+        while gemini_file.state.name == "PROCESSING":
+            time.sleep(1)
+            gemini_file = client.files.get(name=gemini_file.name)
+
+        response = client.models.generate_content(
+            model="gemini-3.6-flash",
+            contents=["Summarize the key points from this document concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.", gemini_file]
+        )
+        note.summary = response.text
+        note.save()
+
+    summary_html = markdown.markdown(note.summary, extensions=['extra', 'nl2br']) if note.summary else ""
+    context = {"note": note, "summary_html": summary_html, "active_note_id": note.id}
+    return render(request, "notes/partials/note_detail_content.html", context)
