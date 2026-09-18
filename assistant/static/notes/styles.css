@@ -81,3 +81,25 @@ body {
     cursor: pointer; 
     font-size: 20px; 
 }
+
+.flashcard-page { 
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 15px; 
+}
+
+.flashcard { 
+    border: 1px solid black; 
+    border-radius: 8px; 
+    padding: 20px; 
+    cursor: pointer; 
+    min-height: 100px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    text-align: center; 
+}
+
+.flashcard-back { 
+    color: #0066cc; 
+}

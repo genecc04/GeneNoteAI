@@ -199,8 +199,9 @@ def generate_flashcards_view(request, note_id):
 
 def flashcards_detail_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
-    flashcards = note.flashcards.all()
-    context = {"note": note, "flashcards": flashcards, "active_note_id": note.id}
+    flashcards = list(note.flashcards.all())
+    pages = [flashcards[i:i + 4] for i in range(0, len(flashcards), 4)]
+    context = {"note": note, "pages": pages, "active_note_id": note.id}
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render(request, "notes/partials/flashcards_detail_content.html", context)

@@ -168,6 +168,44 @@
                 });
             }
         });
+
+        document.body.addEventListener('click', function(e) {
+            const flipCard = e.target.closest('[data-flip-card]');
+            if (flipCard) {
+                const front = flipCard.querySelector('.flashcard-front');
+                const back = flipCard.querySelector('.flashcard-back');
+                if (back.style.display === 'none') {
+                    front.style.display = 'none';
+                    back.style.display = 'block';
+                } else {
+                    front.style.display = 'block';
+                    back.style.display = 'none';
+                }
+            }
+        });
+
+        document.body.addEventListener('click', function(e) {
+            if (e.target.id === 'next-page' || e.target.id === 'prev-page') {
+                const container = document.getElementById('flashcard-pages');
+                const pages = container.querySelectorAll('.flashcard-page');
+                let currentPage = parseInt(container.dataset.currentPage);
+
+                pages[currentPage].style.display = 'none';
+
+                if (e.target.id === 'next-page') {
+                    currentPage++;
+                } else {
+                    currentPage--;
+                }
+
+                pages[currentPage].style.display = 'grid';
+                container.dataset.currentPage = currentPage;
+
+                document.getElementById('page-counter').textContent = `Page ${currentPage + 1} of ${pages.length}`;
+                document.getElementById('prev-page').disabled = (currentPage === 0);
+                document.getElementById('next-page').disabled = (currentPage === pages.length - 1);
+            }
+        });
     </script>
 </body>
 </html>

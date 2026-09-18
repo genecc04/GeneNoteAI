@@ -1,10 +1,22 @@
 <h1>Flashcards: {{ note.title }}</h1>
 
-{% for card in flashcards %}
-    <div style="border: 1px solid black; padding: 10px; margin-bottom: 10px;">
-        <p><strong>Front:</strong> {{ card.front }}</p>
-        <p><strong>Back:</strong> {{ card.back }}</p>
-    </div>
-{% endfor %}
+<div id="flashcard-pages" data-current-page="0">
+    {% for page in pages %}
+        <div class="flashcard-page" data-page="{{ forloop.counter0 }}" style="display: {% if forloop.first %}grid{% else %}none{% endif %};">
+            {% for card in page %}
+                <div class="flashcard" data-flip-card>
+                    <div class="flashcard-front">{{ card.front }}</div>
+                    <div class="flashcard-back" style="display: none;">{{ card.back }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+</div>
+
+<p id="page-counter">Page 1 of {{ pages|length }}</p>
+
+<button id="prev-page" disabled>Previous</button>
+<button id="next-page" {% if pages|length <= 1 %}disabled{% endif %}>Next</button>
+<br><br>
 
 <a href="{% url 'note_detail' note.id %}" data-note-link>Return to Notes</a>
