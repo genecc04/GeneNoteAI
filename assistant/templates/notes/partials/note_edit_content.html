@@ -7,4 +7,4 @@
     <button type="submit">Save Changes</button>
 </form>
 <br>
-<a href="{% url 'note_detail' note.id %}" data-note-link class="btn btn-secondary">Cancel</a>
+<a href="{% url 'note_detail' note.id %}" data-note-link data-note-id="{{ note.id }}" class="btn btn-secondary">Cancel</a>

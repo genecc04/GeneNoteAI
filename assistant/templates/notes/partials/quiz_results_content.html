@@ -15,4 +15,4 @@
     <hr>
 {% endfor %}
 
-<a href="{% url 'note_detail' quiz.note.id %}" data-note-link class="btn btn-secondary">Return to Notes</a>
+<a href="{% url 'note_detail' quiz.note.id %}" data-note-link data-note-id="{{ quiz.note.id }}" class="btn btn-secondary">Return to Notes</a>
