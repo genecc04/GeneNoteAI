@@ -35,6 +35,14 @@
             const parts = value.split(`; ${name}=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
         }
+        function showLoading(message) {
+            document.getElementById('main-panel').innerHTML = `
+                <div class="loading-box">
+                    <div class="spinner"></div>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
 
         document.querySelector('.new-note-btn').addEventListener('click', function(e) {
             e.preventDefault();
@@ -57,7 +65,7 @@
             if (form.hasAttribute('data-quiz-form')) {
                 e.preventDefault();
 
-                document.getElementById('main-panel').innerHTML = '<p>Grading your quiz...</p>';
+                showLoading('Grading your quiz...');
 
                 const formData = new FormData(form);
 
@@ -80,8 +88,8 @@
                 const url = link.getAttribute('href');
 
                 if (link.hasAttribute('data-generating')) {
-                    document.getElementById('main-panel').innerHTML = '<p>Generating with Gemini, please wait...</p>';
-                }
+                        showLoading('Generating with Gemini, please wait...');
+                    }
 
                 fetch(url, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -153,7 +161,7 @@
             if (form.hasAttribute('data-note-link-form')) {
                 e.preventDefault();
 
-                document.getElementById('main-panel').innerHTML = '<p>Saving...</p>';
+                showLoading('Saving...');
 
                 const formData = new FormData(form);
 

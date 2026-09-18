@@ -169,6 +169,8 @@ def generate_flashcards_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
     source_text = note.content if note.content else note.summary
 
+    note.flashcards.all().delete()
+
     prompt = f"""
     Create 8 flashcards based on these notes.
     Respond ONLY with valid JSON, no other text, in this exact format:
