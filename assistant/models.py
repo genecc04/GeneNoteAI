@@ -1,5 +1,12 @@
-import markdown
+from markdown_it import MarkdownIt
+from mdit_py_plugins.dollarmath import dollarmath_plugin
 from django.db import models
+
+md = (
+    MarkdownIt("commonmark", {"breaks": True, "html": False})
+    .enable(["table", "strikethrough"])
+    .use(dollarmath_plugin, allow_space=False)
+)
 
 class Note(models.Model):
     title = models.CharField(max_length=255)
@@ -54,7 +61,7 @@ class ChatMessage(models.Model):
 
     @property
     def content_html(self):
-        return markdown.markdown(self.content, extensions=['extra', 'nl2br'])
+        return md.render(self.content)
 
     def __str__(self):
         return f"{self.role}: {self.content[:50]}"

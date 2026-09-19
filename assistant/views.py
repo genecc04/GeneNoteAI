@@ -39,10 +39,12 @@ def chat_view(request, session_id=None):
     session = get_object_or_404(ChatSession, id=session_id)
 
     if request.method == "POST":
-        user_text = request.POST.get("message")
+        user_text = request.POST.get("message", "").strip()
+        if not user_text:
+            return redirect("chat_session", session_id=session.id)
 
-        if session.title == "New Chat" and user_text.strip():
-            first_prompt = user_text.strip()
+        if session.title == "New Chat":
+            first_prompt = " ".join(user_text.split())
             session.title = first_prompt[:40] + ("…" if len(first_prompt) > 40 else "")
             session.save()
 

@@ -3,6 +3,8 @@
 <html>
 <head>
     <title>GeneNoteAI</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
     <link rel="stylesheet" href="{% static 'notes/styles.css' %}">
 </head>
 <body>
@@ -339,6 +341,22 @@
                 if (e.key === 'Escape') setTitleEditing(false);
             }
         });
+        
+        function renderMath(root) {
+            root.querySelectorAll('.math').forEach(function(el) {
+                if (el.dataset.rendered) return;
+                katex.render(el.textContent, el, {
+                    displayMode: el.tagName === 'DIV',
+                    throwOnError: false
+                });
+                el.dataset.rendered = 'true';
+            });
+        }
+
+        renderMath(document);
+
+        const chatBox = document.getElementById('chat-messages');
+        if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
         
     </script>
 </body>

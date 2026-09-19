@@ -1,34 +1,58 @@
 {% extends "notes/base.html" %}
 {% block content %}
-
-<div class="chat-header" data-chat-id="{{ session.id }}">
-    <div class="chat-title-view" id="chat-title-view">
-        <h1 id="chat-title">{{ session.title }}</h1>
-        <button type="button" class="btn-secondary" id="edit-chat-title-btn">Edit title</button>
-    </div>
-    <div class="chat-title-edit" id="chat-title-edit" style="display:none">
-        <input type="text" id="chat-title-input" maxlength="255">
-        <button type="button" id="save-chat-title-btn">Save</button>
-        <button type="button" class="btn-secondary" id="cancel-chat-title-btn">Cancel</button>
-    </div>
-</div>
-
-<div>
-    {% for msg in messages %}
-        <div class="chat-message">
-            <strong>{{ msg.role }}:</strong>
-            {% if msg.role == "model" %}
-                <div class="markdown-body">{{ msg.content_html|safe }}</div>
-            {% else %}
-                <p>{{ msg.content }}</p>
-            {% endif %}
+<div class="chat-page">
+    <div class="chat-header" data-chat-id="{{ session.id }}">
+        <div class="chat-title-view" id="chat-title-view">
+            <h1 id="chat-title">{{ session.title }}</h1>
+            <button type="button" class="btn-secondary" id="edit-chat-title-btn">Edit title</button>
         </div>
-    {% endfor %}
+        <div class="chat-title-edit" id="chat-title-edit" style="display:none">
+            <input type="text" id="chat-title-input" maxlength="255">
+            <button type="button" id="save-chat-title-btn">Save</button>
+            <button type="button" class="btn-secondary" id="cancel-chat-title-btn">Cancel</button>
+        </div>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+        {% for msg in messages %}
+            <div class="chat-message {{ msg.role }}">
+                <div class="chat-bubble">
+                    {% if msg.role == "model" %}
+                        <div class="markdown-body">{{ msg.content_html|safe }}</div>
+                    {% else %}
+                        {{ msg.content|linebreaksbr }}
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <form method="post" class="chat-input-bar" id="chat-form">
+        {% csrf_token %}
+        <textarea name="message" id="chat-input" rows="1" placeholder="Type a message..." required autofocus></textarea>
+        <button type="submit" class="chat-send-btn" aria-label="Send">➤</button>
+    </form>
 </div>
 
-<form method="post">
-    {% csrf_token %}
-    <input type="text" name="message" placeholder="Type a message...">
-    <button type="submit">Send</button>
-</form>
+<script>
+    const messagesBox = document.getElementById('chat-messages');
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+    const chatInput = document.getElementById('chat-input');
+
+    function autoResize() {
+        chatInput.style.height = 'auto';
+        chatInput.style.height = chatInput.scrollHeight + 'px';
+    }
+
+    chatInput.addEventListener('input', autoResize);
+
+    chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (chatInput.value.trim()) {
+                document.getElementById('chat-form').requestSubmit();
+            }
+        }
+    });
+</script>
 {% endblock %}
