@@ -3,6 +3,7 @@ import time
 import json
 import markdown
 from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -31,13 +32,19 @@ def generate_with_retry(model, contents, max_retries=3, delay=2):
                 raise
 
 def chat_view(request, session_id=None):
-    if session_id:
-        session = get_object_or_404(ChatSession, id=session_id)
-    else:
+    if session_id is None:
         session = ChatSession.objects.create(title="New Chat")
+        return redirect("chat_session", session_id=session.id)
+
+    session = get_object_or_404(ChatSession, id=session_id)
 
     if request.method == "POST":
         user_text = request.POST.get("message")
+
+        if session.title == "New Chat" and user_text.strip():
+            first_prompt = user_text.strip()
+            session.title = first_prompt[:40] + ("…" if len(first_prompt) > 40 else "")
+            session.save()
 
         ChatMessage.objects.create(session=session, role="user", content=user_text)
 
@@ -53,7 +60,18 @@ def chat_view(request, session_id=None):
         ChatMessage.objects.create(session=session, role="model", content=response.text)
 
     messages = session.messages.order_by("created_at")
-    return render(request, "notes/chat.html", {"session": session, "messages": messages})
+    return render(request, "notes/chat.html", { "session": session, "messages": messages, "active_tab": "chats", "active_chat_id": session.id })
+
+def rename_chat_view(request, session_id):
+    session = get_object_or_404(ChatSession, id=session_id)
+
+    if request.method == "POST":
+        new_title = request.POST.get("title", "").strip()
+        if new_title:
+            session.title = new_title[:255]
+            session.save()
+
+    return JsonResponse({"title": session.title})
 
 def note_create_view(request):
     if request.method == "POST":
@@ -243,6 +261,21 @@ def delete_note_view(request, note_id):
 
     notes = Note.objects.all().order_by('-is_favorite', '-created_at')
     return render(request, "notes/partials/sidebar_notes.html", {"sidebar_notes": notes})
+
+def toggle_chat_favorite_view(request, session_id):
+    session = get_object_or_404(ChatSession, id=session_id)
+    session.is_favorite = not session.is_favorite
+    session.save()
+
+    chats = ChatSession.objects.all().order_by('-is_favorite', '-created_at')
+    return render(request, "notes/partials/sidebar_chats.html", {"sidebar_chats": chats})
+
+def delete_chat_view(request, session_id):
+    session = get_object_or_404(ChatSession, id=session_id)
+    session.delete()
+
+    chats = ChatSession.objects.all().order_by('-is_favorite', '-created_at')
+    return render(request, "notes/partials/sidebar_chats.html", {"sidebar_chats": chats})
 
 def note_edit_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)

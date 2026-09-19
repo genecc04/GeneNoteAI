@@ -7,9 +7,23 @@
 </head>
 <body>
     <div class="sidebar">
-        <a href="{% url 'note_create' %}" class="new-note-btn">+ New note</a>
-        <div id="sidebar-list">
-            {% include "notes/partials/sidebar_notes.html" %}
+        <div class="sidebar-tabs">
+            <button type="button" class="sidebar-tab {% if active_tab != 'chats' %}active{% endif %}" data-tab="notes">Notes</button>
+            <button type="button" class="sidebar-tab {% if active_tab == 'chats' %}active{% endif %}" data-tab="chats">Chats</button>
+        </div>
+        <br>
+        <div class="tab-panel" id="tab-notes" {% if active_tab == 'chats' %}style="display:none"{% endif %}>
+            <a href="{% url 'note_create' %}" class="new-note-btn">+ New note</a>
+            <div id="sidebar-list">
+                {% include "notes/partials/sidebar_notes.html" %}
+            </div>
+        </div>
+
+        <div class="tab-panel" id="tab-chats" {% if active_tab != 'chats' %}style="display:none"{% endif %}>
+            <a href="{% url 'chat_new' %}" class="new-chat-btn">+ New chat</a>
+            <div id="sidebar-chats-list">
+                {% include "notes/partials/sidebar_chats.html" %}
+            </div>
         </div>
     </div>
     <div class="main-panel" id="main-panel">
@@ -26,6 +40,7 @@
 
     <script>
         window.currentActiveNoteId = "{{ active_note_id|default:'' }}";
+        window.currentActiveChatId = "{{ active_chat_id|default:'' }}";
         const modalOverlay = document.getElementById('note-modal-overlay');
         const modalBody = document.getElementById('note-modal-body');
         const modalClose = document.getElementById('note-modal-close');
@@ -43,6 +58,16 @@
                 </div>
             `;
         }
+
+        document.querySelectorAll('.sidebar-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+
+                tab.classList.add('active');
+                document.getElementById('tab-' + tab.dataset.tab).style.display = 'block';
+            });
+        });
 
         document.querySelector('.new-note-btn').addEventListener('click', function(e) {
             e.preventDefault();
@@ -156,6 +181,55 @@
             }
         });
 
+        document.body.addEventListener('click', function(e) {
+            const star = e.target.closest('[data-chat-favorite-btn]');
+            if (star) {
+                e.preventDefault();
+                const chatId = star.dataset.chatId;
+
+                fetch(`/chat/${chatId}/toggle-favorite/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('sidebar-chats-list').innerHTML = html;
+
+                    const activeItem = document.querySelector(`.chat-item[data-chat-id="${window.currentActiveChatId}"]`);
+                    if (activeItem) activeItem.classList.add('active');
+                });
+            }
+        });
+
+        document.body.addEventListener('click', function(e) {
+            const deleteBtn = e.target.closest('[data-chat-delete-btn]');
+            if (deleteBtn) {
+                e.preventDefault();
+                const chatId = deleteBtn.dataset.chatId;
+
+                if (!confirm('Delete this chat? This cannot be undone.')) return;
+
+                fetch(`/chat/${chatId}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('sidebar-chats-list').innerHTML = html;
+
+                    if (chatId === window.currentActiveChatId) {
+                        window.location.href = "/";
+                    }
+                });
+            }
+        });
+
         document.body.addEventListener('submit', function(e) {
             const form = e.target;
             if (form.hasAttribute('data-note-link-form')) {
@@ -214,6 +288,58 @@
                 document.getElementById('next-page').disabled = (currentPage === pages.length - 1);
             }
         });
+
+        function setTitleEditing(editing) {
+            document.getElementById('chat-title-view').style.display = editing ? 'none' : 'flex';
+            document.getElementById('chat-title-edit').style.display = editing ? 'flex' : 'none';
+        }
+
+        function saveChatTitle() {
+            const chatId = document.querySelector('.chat-header').dataset.chatId;
+            const newTitle = document.getElementById('chat-title-input').value.trim();
+            if (!newTitle) return;
+
+            const formData = new FormData();
+            formData.append('title', newTitle);
+
+            fetch(`/chat/${chatId}/rename/`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('chat-title').textContent = data.title;
+
+                const sidebarTitle = document.querySelector(`.chat-item[data-chat-id="${chatId}"] .note-title`);
+                if (sidebarTitle) sidebarTitle.textContent = data.title;
+
+                setTitleEditing(false);
+            });
+        }
+
+        document.body.addEventListener('click', function(e) {
+            if (e.target.id === 'edit-chat-title-btn') {
+                const input = document.getElementById('chat-title-input');
+                input.value = document.getElementById('chat-title').textContent;
+                setTitleEditing(true);
+                input.focus();
+                input.select();
+            }
+            if (e.target.id === 'cancel-chat-title-btn') setTitleEditing(false);
+            if (e.target.id === 'save-chat-title-btn') saveChatTitle();
+        });
+
+        document.body.addEventListener('keydown', function(e) {
+            if (e.target.id === 'chat-title-input') {
+                if (e.key === 'Enter') { e.preventDefault(); saveChatTitle(); }
+                if (e.key === 'Escape') setTitleEditing(false);
+            }
+        });
+        
     </script>
 </body>
 </html>

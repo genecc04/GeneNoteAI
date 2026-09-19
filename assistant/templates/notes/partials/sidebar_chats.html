@@ -1,0 +1,9 @@
+{% for chat in sidebar_chats %}
+    <a href="{% url 'chat_session' chat.id %}" class="chat-item {% if chat.id == active_chat_id %}active{% endif %}" data-chat-id="{{ chat.id }}">
+        <span class="note-title">{{ chat }}</span>
+        <span class="note-icons">
+            <span data-chat-favorite-btn data-chat-id="{{ chat.id }}">{% if chat.is_favorite %}★{% else %}☆{% endif %}</span>
+            <span data-chat-delete-btn data-chat-id="{{ chat.id }}">✕</span>
+        </span>
+    </a>
+{% endfor %}

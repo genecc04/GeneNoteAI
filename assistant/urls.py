@@ -15,4 +15,7 @@ urlpatterns = [
     path('notes/<int:note_id>/delete/', views.delete_note_view, name='delete_note'),
     path('notes/<int:note_id>/edit/', views.note_edit_view, name='note_edit'),
     path('notes/<int:note_id>/regenerate-summary/', views.regenerate_summary_view, name='regenerate_summary'),
+    path('chat/<int:session_id>/toggle-favorite/', views.toggle_chat_favorite_view, name='toggle_chat_favorite'),
+    path('chat/<int:session_id>/delete/', views.delete_chat_view, name='delete_chat'),
+    path('chat/<int:session_id>/rename/', views.rename_chat_view, name='rename_chat'),
 ]

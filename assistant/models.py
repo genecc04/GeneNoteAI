@@ -1,3 +1,4 @@
+import markdown
 from django.db import models
 
 class Note(models.Model):
@@ -39,6 +40,7 @@ class Flashcard(models.Model):
 
 class ChatSession(models.Model):
     title = models.CharField(max_length=255, blank=True)
+    is_favorite = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -49,6 +51,10 @@ class ChatMessage(models.Model):
     role = models.CharField(max_length=10)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def content_html(self):
+        return markdown.markdown(self.content, extensions=['extra', 'nl2br'])
 
     def __str__(self):
         return f"{self.role}: {self.content[:50]}"

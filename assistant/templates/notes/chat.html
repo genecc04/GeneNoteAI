@@ -1,10 +1,28 @@
 {% extends "notes/base.html" %}
 {% block content %}
-<h1>{{ session.title }}</h1>
+
+<div class="chat-header" data-chat-id="{{ session.id }}">
+    <div class="chat-title-view" id="chat-title-view">
+        <h1 id="chat-title">{{ session.title }}</h1>
+        <button type="button" class="btn-secondary" id="edit-chat-title-btn">Edit title</button>
+    </div>
+    <div class="chat-title-edit" id="chat-title-edit" style="display:none">
+        <input type="text" id="chat-title-input" maxlength="255">
+        <button type="button" id="save-chat-title-btn">Save</button>
+        <button type="button" class="btn-secondary" id="cancel-chat-title-btn">Cancel</button>
+    </div>
+</div>
 
 <div>
     {% for msg in messages %}
-        <p><strong>{{ msg.role }}:</strong> {{ msg.content }}</p>
+        <div class="chat-message">
+            <strong>{{ msg.role }}:</strong>
+            {% if msg.role == "model" %}
+                <div class="markdown-body">{{ msg.content_html|safe }}</div>
+            {% else %}
+                <p>{{ msg.content }}</p>
+            {% endif %}
+        </div>
     {% endfor %}
 </div>
 
