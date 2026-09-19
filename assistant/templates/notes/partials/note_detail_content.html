@@ -4,8 +4,10 @@
     <p>Attached file: <a href="{{ note.file.url }}">{{ note.file.name }}</a></p>
 {% endif %}
 
-<h3>Content</h3>
-<p>{{ note.content }}</p>
+{% if note.content %}
+    <h3>Content</h3>
+    <div class="markdown-body">{{ note.content_html|safe }}</div>
+{% endif %}
 
 <h3>Summary</h3>
 {% if summary_html %}

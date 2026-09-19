@@ -16,6 +16,10 @@ class Note(models.Model):
     is_favorite = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def content_html(self):
+        return md.render(self.content)
+
     def __str__(self):
         return self.title
 

@@ -22,6 +22,13 @@ function showLoading(message) {
     `;
 }
 
+// Put HTML into the main panel, then draw any formulas inside it
+function setMainPanel(html) {
+    const panel = document.getElementById('main-panel');
+    panel.innerHTML = html;
+    renderMath(panel);
+}
+
 
 // Sidebar: Notes / Chats tab switching
 
@@ -102,7 +109,7 @@ document.body.addEventListener('click', function(e) {
         })
         .then(response => response.text())
         .then(html => {
-            document.getElementById('main-panel').innerHTML = html;
+            setMainPanel(html);
 
             // Sidebar active highlight
             window.currentActiveNoteId = link.dataset.noteId;
@@ -244,7 +251,7 @@ document.body.addEventListener('submit', function(e) {
         })
         .then(response => response.text())
         .then(html => {
-            document.getElementById('main-panel').innerHTML = html;
+            setMainPanel(html);
         });
     }
 });
@@ -298,6 +305,105 @@ function setTitleEditing(editing) {
     document.getElementById('chat-title-edit').style.display = editing ? 'flex' : 'none';
 }
 
+// ---------- Chat: send a message without reloading ----------
+
+// True while a reply is pending; blocks a second send
+let isSending = false;
+
+// Turn plain text into safe HTML (escape < > &, keep line breaks)
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML.replace(/\n/g, '<br>');
+}
+
+// Add a bubble to the bottom of the chat, scroll to it, and return the new row
+function appendMessage(role, html) {
+    const box = document.getElementById('chat-messages');
+    const row = document.createElement('div');
+    row.className = `chat-message ${role}`;
+    row.innerHTML = `<div class="chat-bubble">${html}</div>`;
+    box.appendChild(row);
+    box.scrollTop = box.scrollHeight;
+    return row;
+}
+
+// Handle the chat form: show the message and thinking dots, send it in the
+// background, then swap the dots for the reply (or an error)
+document.body.addEventListener('submit', async function(e) {
+    if (e.target.id !== 'chat-form') return;
+    e.preventDefault();
+    if (isSending) return;
+
+    const input = document.getElementById('chat-input');
+    const sendBtn = e.target.querySelector('.chat-send-btn');
+    const chatId = document.querySelector('.chat-header').dataset.chatId;
+    const text = input.value.trim();
+    if (!text) return;
+
+    // Lock the form until the reply arrives
+    isSending = true;
+    sendBtn.disabled = true;
+    input.readOnly = true;
+    input.placeholder = 'Waiting for reply...';
+
+    // Remove an earlier error, then show your message and the thinking dots
+    document.querySelectorAll('.chat-message.error').forEach(row => row.remove());
+    const userRow = appendMessage('user', escapeHtml(text));
+    input.value = '';
+    input.style.height = 'auto';
+    const thinkingRow = appendMessage('model',
+        '<span class="typing" aria-label="Thinking"><span></span><span></span><span></span></span>');
+
+    try {
+        const formData = new FormData();
+        formData.append('message', text);
+
+        const response = await fetch(`/chat/${chatId}/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: formData
+        }).catch(() => null);
+        if (!response) throw new Error('Could not reach the server.');
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+
+        // Swap the dots for the formatted reply, then draw any formulas in it
+        thinkingRow.querySelector('.chat-bubble').innerHTML =
+            `<div class="markdown-body">${data.reply_html}</div>`;
+        renderMath(thinkingRow);
+        if (data.title) updateChatTitle(chatId, data.title);
+    } catch (error) {
+        // Nothing was saved on the server, so undo the screen too and give the text back
+        userRow.remove();
+        thinkingRow.remove();
+        input.value = text;
+        input.dispatchEvent(new Event('input'));
+        appendMessage('model', escapeHtml(error.message)).classList.add('error');
+    } finally {
+        // Unlock the form whether it worked or not
+        isSending = false;
+        sendBtn.disabled = false;
+        input.readOnly = false;
+        input.placeholder = 'Type a message...';
+        input.focus();
+        const box = document.getElementById('chat-messages');
+        box.scrollTop = box.scrollHeight;
+    }
+});
+
+// Update the chat title in the page heading and in the sidebar entry
+function updateChatTitle(chatId, title) {
+    document.getElementById('chat-title').textContent = title;
+
+    const sidebarTitle = document.querySelector(`.chat-item[data-chat-id="${chatId}"] .note-title`);
+    if (sidebarTitle) sidebarTitle.textContent = title;
+}
+
 // Send the new title to the server, then update the heading and the matching sidebar entry in place (no reload)
 function saveChatTitle() {
     const chatId = document.querySelector('.chat-header').dataset.chatId;
@@ -317,13 +423,9 @@ function saveChatTitle() {
     })
     .then(response => response.json())
     .then(data => {
-        document.getElementById('chat-title').textContent = data.title;
-
-        const sidebarTitle = document.querySelector(`.chat-item[data-chat-id="${chatId}"] .note-title`);
-        if (sidebarTitle) sidebarTitle.textContent = data.title;
-
-        setTitleEditing(false);
-    });
+                updateChatTitle(chatId, data.title);
+                setTitleEditing(false);
+            });
 }
 
 // Edit / Cancel / Save buttons in the chat header

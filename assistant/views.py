@@ -18,8 +18,11 @@ def home_view(request):
     if latest_note:
         return redirect('note_detail', note_id=latest_note.id)
 
-    sessions = ChatSession.objects.all().order_by('-created_at')
-    return render(request, "notes/home.html", {"sessions": sessions})
+    latest_chat = ChatSession.objects.order_by('-created_at').first()
+    if latest_chat:
+        return redirect('chat_session', session_id=latest_chat.id)
+
+    return render(request, "notes/home.html")
 
 def generate_with_retry(model, contents, max_retries=3, delay=2):
     for attempt in range(max_retries):
@@ -41,25 +44,34 @@ def chat_view(request, session_id=None):
     if request.method == "POST":
         user_text = request.POST.get("message", "").strip()
         if not user_text:
-            return redirect("chat_session", session_id=session.id)
+            return JsonResponse({"error": "Message is empty."}, status=400)
+
+        history = [
+            types.Content(role=msg.role, parts=[types.Part(text=msg.content)])
+            for msg in session.messages.order_by("created_at")
+        ]
+
+        try:
+            chat = client.chats.create(model="gemini-3.5-flash-lite", history=history)
+            response = chat.send_message(user_text)
+        except genai_errors.APIError:
+            return JsonResponse(
+                {"error": "Gemini couldn't respond right now. Please try again."},
+                status=502
+            )
+
+        ChatMessage.objects.create(session=session, role="user", content=user_text)
+        reply = ChatMessage.objects.create(
+            session=session, role="model",
+            content=response.text or "(No response was generated.)"
+        )
 
         if session.title == "New Chat":
             first_prompt = " ".join(user_text.split())
             session.title = first_prompt[:40] + ("…" if len(first_prompt) > 40 else "")
             session.save()
 
-        ChatMessage.objects.create(session=session, role="user", content=user_text)
-
-        past_messages = session.messages.order_by("created_at")
-        history = [
-            types.Content(role=msg.role, parts=[types.Part(text=msg.content)])
-            for msg in past_messages
-        ]
-
-        chat = client.chats.create(model="gemini-3.5-flash-lite", history=history[:-1])
-        response = chat.send_message(user_text)
-
-        ChatMessage.objects.create(session=session, role="model", content=response.text)
+        return JsonResponse({"reply_html": reply.content_html, "title": session.title})
 
     messages = session.messages.order_by("created_at")
     return render(request, "notes/chat.html", { "session": session, "messages": messages, "active_tab": "chats", "active_chat_id": session.id })

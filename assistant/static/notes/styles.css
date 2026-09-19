@@ -79,6 +79,32 @@ body {
     color: white;
 }
 
+/*Sidebar empty*/
+.empty-state {
+    max-width: 460px;
+    margin: 80px auto 0;
+    text-align: center;
+}
+
+.empty-state p {
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.empty-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.sidebar-empty {
+    color: var(--text-muted);
+    font-size: 14px;
+    text-align: center;
+    padding: 12px 0;
+}
+
 .chat-header { margin-bottom: 20px; }
 
 .chat-title-view,
@@ -132,6 +158,33 @@ body {
     border: 1px solid var(--border-color);
     border-bottom-left-radius: 4px;
     max-width: 85%;
+}
+
+.typing {
+    display: inline-flex;
+    gap: 5px;
+    padding: 6px 2px;
+}
+
+.typing span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: typing-bounce 1.2s infinite ease-in-out;
+}
+
+.typing span:nth-child(2) { animation-delay: 0.15s; }
+.typing span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes typing-bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-5px); opacity: 1; }
+}
+
+.chat-message.error .chat-bubble {
+    border-color: var(--danger);
+    color: var(--danger);
 }
 
 .markdown-body { overflow-x: auto; }
@@ -318,6 +371,11 @@ button:disabled {
     cursor: pointer;
     font-size: 20px;
     color: var(--text-muted);
+}
+
+.modal-box textarea {
+    min-height: 200px;
+    resize: vertical;
 }
 
 .modal-close:hover { color: var(--text-primary); }

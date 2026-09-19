@@ -1,15 +1,11 @@
 {% extends "notes/base.html" %}
 {% block content %}
-<h1>No notes yet</h1>
-<p>Create your first note to get started.</p>
-
-<h2>Your Chats</h2>
-<a href="{% url 'chat_new' %}">+ New Chat</a>
-<ul>
-    {% for session in sessions %}
-        <li><a href="{% url 'chat_session' session.id %}">{{ session.title }}</a></li>
-    {% empty %}
-        <li>No chats yet.</li>
-    {% endfor %}
-</ul>
+<div class="empty-state">
+    <h1>Welcome to GeneNoteAI</h1>
+    <p>Add a note to get an AI summary, quizzes, and flashcards, or start a chat to ask questions.</p>
+    <div class="empty-actions">
+        <a href="{% url 'note_create' %}" class="btn" onclick="document.querySelector('.new-note-btn').click(); return false;">+ New note</a>
+        <a href="{% url 'chat_new' %}" class="btn btn-secondary">+ New chat</a>
+    </div>
+</div>
 {% endblock %}

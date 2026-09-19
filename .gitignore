@@ -1,22 +1,36 @@
-# Environment variables
+# Environment variables and secrets
 .env
+.env.*
+!.env.example
+*.pem
+*.key
 
-# Virtual environment
+# Virtual environments
 .venv/
 venv/
+env/
 
-# Python cache
+# Python cache and build output
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
 
 # Django
 db.sqlite3
+db.sqlite3-journal
+*.sqlite3
 *.log
-media/
+local_settings.py
 staticfiles/
 
-# Editor/OS junk
+# Uploaded files (private notes and documents)
+/notes/
+/media/
+
+# Editor / OS junk
 .vscode/
 .idea/
 .DS_Store
