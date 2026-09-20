@@ -1,0 +1,10 @@
+<h2>Settings for this chat</h2>
+<p class="settings-intro">Anything left on default follows the global settings.</p>
+
+<form method="post" action="{% url 'chat_settings' session.id %}" id="chat-settings-form">
+    {% csrf_token %}
+    {% for field in form %}
+        {% include "notes/partials/settings_field.html" %}
+    {% endfor %}
+    <button type="submit">Save</button>
+</form>

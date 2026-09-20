@@ -1,5 +1,6 @@
 <h1>{{ note.title }}</h1>
 <a href="{% url 'note_edit' note.id %}" data-note-link data-note-id="{{ note.id }}" class="btn btn-secondary">Edit Note</a>
+<button type="button" class="btn btn-secondary" data-note-settings-btn data-note-id="{{ note.id }}">⚙ Note settings</button>
 {% if note.file %}
     <p>Attached file: <a href="{{ note.file.url }}">{{ note.file.name }}</a></p>
 {% endif %}

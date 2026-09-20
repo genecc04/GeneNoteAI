@@ -9,7 +9,7 @@ from google import genai
 from google.genai import types
 from google.genai import errors as genai_errors
 from .models import ChatSession, ChatMessage, Note, Quiz, Question, Flashcard, AppSettings
-from .forms import AppSettingsForm
+from .forms import AppSettingsForm, NoteSettingsForm, ChatSettingsForm
 
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -379,3 +379,31 @@ def settings_view(request):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render(request, "notes/partials/settings_content.html", context, status=status)
     return render(request, "notes/settings.html", context)
+
+def note_settings_view(request, note_id):
+    note = get_object_or_404(Note, id=note_id)
+
+    if request.method == "POST":
+        form = NoteSettingsForm(request.POST, instance=note)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({"ok": True})
+        return render(request, "notes/partials/note_settings_content.html",
+                      {"form": form, "note": note}, status=400)
+
+    form = NoteSettingsForm(instance=note)
+    return render(request, "notes/partials/note_settings_content.html", {"form": form, "note": note})
+
+def chat_settings_view(request, session_id):
+    session = get_object_or_404(ChatSession, id=session_id)
+
+    if request.method == "POST":
+        form = ChatSettingsForm(request.POST, instance=session)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({"ok": True})
+        return render(request, "notes/partials/chat_settings_content.html",
+                      {"form": form, "session": session}, status=400)
+
+    form = ChatSettingsForm(instance=session)
+    return render(request, "notes/partials/chat_settings_content.html", {"form": form, "session": session})

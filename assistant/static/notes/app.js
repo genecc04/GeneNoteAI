@@ -508,3 +508,91 @@ document.body.addEventListener('submit', function(e) {
         panel.scrollTop = 0;
     });
 });
+
+// Note settings: open the popup and save
+
+// Open this note's settings in the modal
+document.body.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-note-settings-btn]');
+    if (!btn) return;
+
+    fetch(`/notes/${btn.dataset.noteId}/settings/`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.text())
+    .then(html => {
+        modalBody.innerHTML = html;
+        modalOverlay.classList.add('open');
+    });
+});
+
+// Save: on success close the popup; on a validation error, show the form again with the messages
+document.body.addEventListener('submit', function(e) {
+    if (e.target.id !== 'note-settings-form') return;
+    e.preventDefault();
+
+    fetch(e.target.action, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: new FormData(e.target)
+    })
+    .then(response => {
+        if (response.ok) {
+            modalOverlay.classList.remove('open');
+            return null;
+        }
+        return response.text();
+    })
+    .then(html => {
+        if (html) modalBody.innerHTML = html;
+    });
+});
+
+// Individual settings popups (notes and chats share this code)
+
+// Fetch a settings form and show it in the modal
+function openSettingsModal(url) {
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(response => response.text())
+        .then(html => {
+            modalBody.innerHTML = html;
+            modalOverlay.classList.add('open');
+        });
+}
+
+// The two open buttons only differ in their URL
+document.body.addEventListener('click', function(e) {
+    const noteBtn = e.target.closest('[data-note-settings-btn]');
+    if (noteBtn) openSettingsModal(`/notes/${noteBtn.dataset.noteId}/settings/`);
+
+    const chatBtn = e.target.closest('[data-chat-settings-btn]');
+    if (chatBtn) openSettingsModal(`/chat/${chatBtn.dataset.chatId}/settings/`);
+});
+
+// Save either form: on success close the popup; on a validation error, show the form again with the messages
+document.body.addEventListener('submit', function(e) {
+    if (e.target.id !== 'note-settings-form' && e.target.id !== 'chat-settings-form') return;
+    e.preventDefault();
+
+    fetch(e.target.action, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: new FormData(e.target)
+    })
+    .then(response => {
+        if (response.ok) {
+            modalOverlay.classList.remove('open');
+            return null;
+        }
+        return response.text();
+    })
+    .then(html => {
+        if (html) modalBody.innerHTML = html;
+    });
+});

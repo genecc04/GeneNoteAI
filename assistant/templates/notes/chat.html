@@ -5,6 +5,7 @@
         <div class="chat-title-view" id="chat-title-view">
             <h1 id="chat-title">{{ session.title }}</h1>
             <button type="button" class="btn-secondary" id="edit-chat-title-btn">Edit title</button>
+            <button type="button" class="btn-secondary" data-chat-settings-btn data-chat-id="{{ session.id }}">⚙ Chat settings</button>
         </div>
         <div class="chat-title-edit" id="chat-title-edit" style="display:none">
             <input type="text" id="chat-title-input" maxlength="255">
