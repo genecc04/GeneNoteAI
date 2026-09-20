@@ -18,4 +18,5 @@ urlpatterns = [
     path('chat/<int:session_id>/toggle-favorite/', views.toggle_chat_favorite_view, name='toggle_chat_favorite'),
     path('chat/<int:session_id>/delete/', views.delete_chat_view, name='delete_chat'),
     path('chat/<int:session_id>/rename/', views.rename_chat_view, name='rename_chat'),
+    path('settings/', views.settings_view, name='settings'),
 ]

@@ -471,3 +471,40 @@ renderMath(document);
 // Runs after the math is drawn, because formulas change message heights
 const chatBox = document.getElementById('chat-messages');
 if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+
+// Settings: open in the main panel and save
+
+// Load the settings page into the main panel and clear the sidebar highlight
+document.getElementById('open-settings-btn').addEventListener('click', function() {
+    fetch('/settings/', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('main-panel').innerHTML = html;
+
+            // Nothing is the "current" note or chat while settings are open
+            window.currentActiveNoteId = '';
+            window.currentActiveChatId = '';
+            document.querySelectorAll('.note-item, .chat-item').forEach(item => item.classList.remove('active'));
+        });
+});
+
+// Save: the server sends the form back with "Settings saved" or with error messages
+document.body.addEventListener('submit', function(e) {
+    if (e.target.id !== 'settings-form') return;
+    e.preventDefault();
+
+    fetch(e.target.action, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: new FormData(e.target)
+    })
+    .then(response => response.text())
+    .then(html => {
+        const panel = document.getElementById('main-panel');
+        panel.innerHTML = html;
+        panel.scrollTop = 0;
+    });
+});

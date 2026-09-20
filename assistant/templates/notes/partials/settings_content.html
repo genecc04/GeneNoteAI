@@ -1,0 +1,20 @@
+<h1>Default settings</h1>
+<p class="settings-intro">These apply to every note and chat unless it has its own settings.</p>
+
+{% if saved %}<p class="settings-saved">Settings saved.</p>{% endif %}
+
+<form method="post" action="{% url 'settings' %}" id="settings-form" class="settings-form">
+    {% csrf_token %}
+
+    <h3>Notes</h3>
+    {% for field in note_fields %}
+        {% include "notes/partials/settings_field.html" %}
+    {% endfor %}
+
+    <h3>Chat</h3>
+    {% for field in chat_fields %}
+        {% include "notes/partials/settings_field.html" %}
+    {% endfor %}
+
+    <button type="submit">Save settings</button>
+</form>

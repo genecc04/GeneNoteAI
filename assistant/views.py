@@ -8,7 +8,8 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from google.genai import errors as genai_errors
-from .models import ChatSession, ChatMessage, Note, Quiz, Question, Flashcard
+from .models import ChatSession, ChatMessage, Note, Quiz, Question, Flashcard, AppSettings
+from .forms import AppSettingsForm
 
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -46,13 +47,20 @@ def chat_view(request, session_id=None):
         if not user_text:
             return JsonResponse({"error": "Message is empty."}, status=400)
 
+        opts = session.effective()
+
+        recent = list(session.messages.order_by("-created_at")[:opts.chat_history_limit])
+        recent.reverse()
+        if recent and recent[0].role == "model":
+            recent = recent[1:]
+
         history = [
             types.Content(role=msg.role, parts=[types.Part(text=msg.content)])
-            for msg in session.messages.order_by("created_at")
+            for msg in recent
         ]
 
         try:
-            chat = client.chats.create(model="gemini-3.5-flash-lite", history=history)
+            chat = client.chats.create(model=opts.chat_model, history=history)
             response = chat.send_message(user_text)
         except genai_errors.APIError:
             return JsonResponse(
@@ -98,12 +106,13 @@ def note_create_view(request):
             content=content,
             file=uploaded_file
         )
+        opts = note.effective()
 
         try:
             if content:
                 response = generate_with_retry(
-                    model="gemini-3.5-flash-lite",
-                    contents=f"Summarize the following study notes concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.\n\n{content}"
+                    model=opts.generation_model,
+                    contents=f"Summarize the following study notes concisely.\n\n{content}"
                 )
                 note.summary = response.text
                 note.save()
@@ -116,13 +125,13 @@ def note_create_view(request):
                     gemini_file = client.files.get(name=gemini_file.name)
 
                 response = generate_with_retry(
-                    model="gemini-3.5-flash-lite",
-                    contents=["Summarize the key points from this document concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.", gemini_file]
+                    model=opts.generation_model,
+                    contents=["Summarize the key points from this document concisely.", gemini_file]
                 )
                 note.summary = response.text
                 note.save()
         except genai_errors.ServerError:
-            note.summary = "Summary generation failed — Gemini may be experiencing high demand. You can try regenerating it from the note page."
+            note.summary = "Summary generation failed, Gemini may be experiencing high demand. You can try regenerating it from the note page."
             note.save()
 
         return redirect("note_detail", note_id=note.id)
@@ -144,10 +153,11 @@ def note_detail_view(request, note_id):
 
 def generate_quiz_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
+    opts = note.effective()
     source_text = note.content if note.content else note.summary
 
     prompt = f"""
-    Create a 5-question multiple choice quiz based on these notes.
+    Create a {opts.quiz_question_count}-question multiple choice quiz if possible based on these notes.
     Respond ONLY with valid JSON, no other text, in this exact format:
     [
     {{"question": "...", "choice_a": "...", "choice_b": "...", "choice_c": "...", "choice_d": "...", "correct_choice": "a"}}
@@ -158,7 +168,7 @@ def generate_quiz_view(request, note_id):
     """
 
     try:
-        response = generate_with_retry(model="gemini-3.5-flash-lite", contents=prompt)
+        response = generate_with_retry(model=opts.generation_model, contents=prompt)
         clean_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
         questions_data = json.loads(clean_text)
     except (genai_errors.ServerError, json.JSONDecodeError):
@@ -166,7 +176,7 @@ def generate_quiz_view(request, note_id):
 
     quiz = Quiz.objects.create(note=note, title=f"Quiz: {note.title}")
 
-    for q in questions_data:
+    for q in questions_data[:opts.quiz_question_count]:
         Question.objects.create(
             quiz=quiz,
             text=q["question"],
@@ -219,12 +229,13 @@ def quiz_detail_view(request, quiz_id):
 
 def generate_flashcards_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
+    opts = note.effective()
     source_text = note.content if note.content else note.summary
 
     note.flashcards.all().delete()
 
     prompt = f"""
-    Create 8 flashcards based on these notes.
+    Create {opts.flashcard_count} flashcards if possible based on these notes.
     Respond ONLY with valid JSON, no other text, in this exact format:
     [
     {{"front": "...", "back": "..."}}
@@ -235,13 +246,13 @@ def generate_flashcards_view(request, note_id):
     """
 
     try:
-        response = generate_with_retry(model="gemini-3.5-flash-lite", contents=prompt)
+        response = generate_with_retry(model=opts.generation_model, contents=prompt)
         clean_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
         cards_data = json.loads(clean_text)
     except (genai_errors.ServerError, json.JSONDecodeError):
         return render(request, "notes/partials/error_content.html", {"note": note, "active_note_id": note.id})
 
-    for card in cards_data:
+    for card in cards_data[:opts.flashcard_count]:
         Flashcard.objects.create(
             note=note,
             front=card["front"],
@@ -311,13 +322,14 @@ def note_edit_view(request, note_id):
 
 def regenerate_summary_view(request, note_id):
     note = get_object_or_404(Note, id=note_id)
+    opts = note.effective()
     source_text = note.content if note.content else note.summary
 
     try:
         if note.content:
             response = generate_with_retry(
-                model="gemini-3.5-flash-lite",
-                contents=f"Summarize the following study notes concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.\n\n{source_text}"
+                model=opts.generation_model,
+                contents=f"Summarize the following study notes concisely.\n\n{source_text}"
             )
             note.summary = response.text
             note.save()
@@ -330,8 +342,8 @@ def regenerate_summary_view(request, note_id):
                 gemini_file = client.files.get(name=gemini_file.name)
 
             response = generate_with_retry(
-                model="gemini-3.5-flash-lite",
-                contents=["Summarize the key points from this document concisely. Use a flat bulleted list only — no nested sub-bullets — and use **bold** only for key terms.", gemini_file]
+                model=opts.generation_model,
+                contents=["Summarize the key points from this document concisely.", gemini_file]
             )
             note.summary = response.text
             note.save()
@@ -341,3 +353,29 @@ def regenerate_summary_view(request, note_id):
     summary_html = markdown.markdown(note.summary, extensions=['extra', 'nl2br']) if note.summary else ""
     context = {"note": note, "summary_html": summary_html, "active_note_id": note.id}
     return render(request, "notes/partials/note_detail_content.html", context)
+
+def settings_view(request):
+    cfg = AppSettings.load()
+    saved = False
+    status = 200
+
+    if request.method == "POST":
+        form = AppSettingsForm(request.POST, instance=cfg)
+        if form.is_valid():
+            form.save()
+            saved = True
+        else:
+            status = 400
+    else:
+        form = AppSettingsForm(instance=cfg)
+
+    context = {
+        "form": form,
+        "saved": saved,
+        "note_fields": [form["generation_model"], form["quiz_question_count"], form["flashcard_count"]],
+        "chat_fields": [form["chat_model"], form["chat_history_limit"]],
+    }
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, "notes/partials/settings_content.html", context, status=status)
+    return render(request, "notes/settings.html", context)

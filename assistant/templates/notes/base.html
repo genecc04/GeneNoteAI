@@ -8,26 +8,31 @@
     <link rel="stylesheet" href="{% static 'notes/styles.css' %}">
 </head>
 <body>
-    <div class="sidebar">
-        <div class="sidebar-tabs">
-            <button type="button" class="sidebar-tab {% if active_tab != 'chats' %}active{% endif %}" data-tab="notes">Notes</button>
-            <button type="button" class="sidebar-tab {% if active_tab == 'chats' %}active{% endif %}" data-tab="chats">Chats</button>
-        </div>
-        <br>
-        <div class="tab-panel" id="tab-notes" {% if active_tab == 'chats' %}style="display:none"{% endif %}>
-            <a href="{% url 'note_create' %}" class="new-note-btn">+ New note</a>
-            <div id="sidebar-list">
-                {% include "notes/partials/sidebar_notes.html" %}
-            </div>
-        </div>
+        <div class="sidebar">
+            <div class="sidebar-scroll">
+                <div class="sidebar-tabs">
+                    <button type="button" class="sidebar-tab {% if active_tab != 'chats' %}active{% endif %}" data-tab="notes">Notes</button>
+                    <button type="button" class="sidebar-tab {% if active_tab == 'chats' %}active{% endif %}" data-tab="chats">Chats</button>
+                </div>
+                <br>
+                <div class="tab-panel" id="tab-notes" {% if active_tab == 'chats' %}style="display:none"{% endif %}>
+                    <a href="{% url 'note_create' %}" class="new-note-btn">+ New note</a>
+                    <div id="sidebar-list">
+                        {% include "notes/partials/sidebar_notes.html" %}
+                    </div>
+                </div>
 
-        <div class="tab-panel" id="tab-chats" {% if active_tab != 'chats' %}style="display:none"{% endif %}>
-            <a href="{% url 'chat_new' %}" class="new-chat-btn">+ New chat</a>
-            <div id="sidebar-chats-list">
-                {% include "notes/partials/sidebar_chats.html" %}
+                <div class="tab-panel" id="tab-chats" {% if active_tab != 'chats' %}style="display:none"{% endif %}>
+                    <a href="{% url 'chat_new' %}" class="new-chat-btn">+ New chat</a>
+                    <div id="sidebar-chats-list">
+                        {% include "notes/partials/sidebar_chats.html" %}
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <button type="button" id="open-settings-btn" class="sidebar-settings-btn">⚙ Settings</button>
             </div>
         </div>
-    </div>
     <div class="main-panel" id="main-panel">
         {% block content %}{% endblock %}
     </div>
