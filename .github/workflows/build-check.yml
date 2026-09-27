@@ -1,0 +1,34 @@
+name: Build Check
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      GEMINI_API_KEY: "dummy-key-for-tests"
+      DJANGO_SECRET_KEY: "dummy-secret-for-tests"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check for missing migrations
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Run Django system checks
+        run: python manage.py check
+
+      - name: Run tests
+        run: python manage.py test
